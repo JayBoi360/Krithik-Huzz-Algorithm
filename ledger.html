@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Ledger</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap');
+
+  :root{
+    --paper:#FAF5EC;
+    --paper-line:#E4DBC9;
+    --ink:#2B2A28;
+    --ink-soft:#6B655A;
+    --brick:#B75234;
+    --sage:#5E7A5A;
+    --mustard:#C79A3C;
+    --card:#FFFFFF;
+    --radius:3px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    background-image:
+      linear-gradient(var(--paper-line) 1px, transparent 1px);
+    background-size: 100% 2.1em;
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    line-height:1.5;
+    padding:0 0 6em;
+  }
+  header{
+    max-width:720px;
+    margin:0 auto;
+    padding:3em 1.5em 1.5em;
+    border-bottom:1px solid var(--paper-line);
+  }
+  h1{
+    font-family:'Fraunces',serif;
+    font-optical-sizing:auto;
+    font-weight:600;
+    font-size:2.4em;
+    margin:0 0 .15em;
+    letter-spacing:-0.01em;
+  }
+  header p{
+    margin:0;
+    color:var(--ink-soft);
+    font-size:.95em;
+    max-width:46ch;
+  }
+  main{max-width:720px;margin:0 auto;padding:0 1.5em;}
+
+  .toolbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin:1.6em 0 1em;
+  }
+  .toolbar button{
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:.85em;
+    background:var(--ink);
+    color:var(--paper);
+    border:none;
+    padding:.6em 1em;
+    border-radius:var(--radius);
+    cursor:pointer;
+  }
+  .toolbar button:hover{background:var(--brick);}
+  .sort-select{
+    font-family:'Inter',sans-serif;
+    font-size:.85em;
+    color:var(--ink-soft);
+    background:transparent;
+    border:1px solid var(--paper-line);
+    border-radius:var(--radius);
+    padding:.5em .7em;
+  }
+
+  .entry{
+    background:var(--card);
+    border:1px solid var(--paper-line);
+    border-radius:var(--radius);
+    margin-bottom:1em;
+    overflow:hidden;
+  }
+  .entry-head{
+    display:flex;
+    align-items:center;
+    gap:1em;
+    padding:1em 1.2em;
+    cursor:pointer;
+  }
+  .entry-name{
+    font-family:'Fraunces',serif;
+    font-size:1.25em;
+    font-weight:500;
+    flex:1;
+    min-width:0;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .entry-score{
+    font-family:'Fraunces',serif;
+    font-size:1.6em;
+    font-weight:600;
+    color:var(--brick);
+    min-width:2.4em;
+    text-align:right;
+  }
+  .entry-meta{
+    font-size:.78em;
+    color:var(--ink-soft);
+    display:flex;
+    gap:.6em;
+    align-items:center;
+    white-space:nowrap;
+  }
+  .trend{font-size:1.1em;}
+  .trend.up{color:var(--sage);}
+  .trend.down{color:var(--brick);}
+  .trend.flat{color:var(--ink-soft);}
+
+  .entry-body{
+    display:none;
+    padding:0 1.2em 1.2em;
+    border-top:1px solid var(--paper-line);
+  }
+  .entry.open .entry-body{display:block;}
+  .entry.open .entry-head{border-bottom:1px solid var(--paper-line);}
+
+  .stat-row{
+    display:flex;
+    gap:1.5em;
+    margin:1em 0;
+    flex-wrap:wrap;
+  }
+  .stat{font-size:.8em;color:var(--ink-soft);}
+  .stat b{color:var(--ink);font-weight:600;}
+
+  .cat-bars{margin:1em 0;}
+  .cat-bar-row{display:flex;align-items:center;gap:.7em;margin-bottom:.5em;}
+  .cat-label{font-size:.78em;color:var(--ink-soft);width:6.5em;flex-shrink:0;}
+  .cat-track{flex:1;background:var(--paper);border:1px solid var(--paper-line);height:8px;border-radius:4px;overflow:hidden;}
+  .cat-fill{height:100%;background:var(--mustard);}
+  .cat-val{font-size:.78em;width:2em;text-align:right;color:var(--ink-soft);}
+
+  .history{margin-top:1em;}
+  .history h4{
+    font-family:'Inter',sans-serif;
+    font-size:.75em;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--ink-soft);
+    margin:0 0 .5em;
+    font-weight:600;
+  }
+  .interaction{
+    display:flex;
+    justify-content:space-between;
+    gap:1em;
+    font-size:.85em;
+    padding:.4em 0;
+    border-bottom:1px dashed var(--paper-line);
+  }
+  .interaction:last-child{border-bottom:none;}
+  .interaction .date{color:var(--ink-soft);white-space:nowrap;}
+  .interaction .note{flex:1;color:var(--ink);}
+  .interaction .q{font-weight:600;white-space:nowrap;}
+
+  .log-btn{
+    margin-top:1em;
+    font-family:'Inter',sans-serif;
+    font-size:.82em;
+    font-weight:600;
+    background:none;
+    border:1px solid var(--ink);
+    color:var(--ink);
+    padding:.5em 1em;
+    border-radius:var(--radius);
+    cursor:pointer;
+  }
+  .log-btn:hover{background:var(--ink);color:var(--paper);}
+  .delete-btn{
+    font-size:.78em;
+    color:var(--ink-soft);
+    background:none;
+    border:none;
+    cursor:pointer;
+    text-decoration:underline;
+    margin-left:1em;
+  }
+  .delete-btn:hover{color:var(--brick);}
+
+  .empty{
+    text-align:center;
+    color:var(--ink-soft);
+    padding:3em 1em;
+    font-size:.9em;
+  }
+
+  /* modal */
+  .overlay{
+    display:none;
+    position:fixed;inset:0;
+    background:rgba(43,42,40,.4);
+    align-items:center;justify-content:center;
+    padding:1.5em;
+    z-index:10;
+  }
+  .overlay.show{display:flex;}
+  .modal{
+    background:var(--card);
+    border-radius:var(--radius);
+    padding:1.6em;
+    max-width:420px;
+    width:100%;
+    max-height:88vh;
+    overflow-y:auto;
+  }
+  .modal h3{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    margin:0 0 1em;
+  }
+  .field{margin-bottom:1em;}
+  .field label{
+    display:block;
+    font-size:.78em;
+    color:var(--ink-soft);
+    margin-bottom:.35em;
+  }
+  .field input[type=text], .field input[type=number], .field textarea{
+    width:100%;
+    font-family:'Inter',sans-serif;
+    font-size:.9em;
+    padding:.55em .7em;
+    border:1px solid var(--paper-line);
+    border-radius:var(--radius);
+    background:var(--paper);
+    color:var(--ink);
+  }
+  .field textarea{resize:vertical;min-height:3em;}
+  .slider-row{display:flex;align-items:center;gap:.8em;}
+  .slider-row input[type=range]{flex:1;}
+  .slider-val{width:2em;text-align:right;font-weight:600;font-size:.9em;}
+  .modal-actions{
+    display:flex;
+    justify-content:flex-end;
+    gap:.6em;
+    margin-top:1.4em;
+  }
+  .modal-actions button{
+    font-family:'Inter',sans-serif;
+    font-size:.85em;
+    font-weight:600;
+    padding:.55em 1em;
+    border-radius:var(--radius);
+    cursor:pointer;
+  }
+  .btn-cancel{background:none;border:1px solid var(--paper-line);color:var(--ink-soft);}
+  .btn-save{background:var(--ink);border:1px solid var(--ink);color:var(--paper);}
+  .btn-save:hover{background:var(--brick);border-color:var(--brick);}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>The Ledger</h1>
+  <p>A running record, not a snapshot. Ratings here shift with recency, consistency, and how much weight you give each moment — not just a raw average.</p>
+</header>
+
+<main>
+  <div class="toolbar">
+    <button id="addPersonBtn">+ New entry</button>
+    <select class="sort-select" id="sortSelect">
+      <option value="rating">Sort by rating</option>
+      <option value="recent">Sort by most recent</option>
+      <option value="name">Sort by name</option>
+    </select>
+  </div>
+
+  <div id="entries"></div>
+  <div class="empty" id="emptyState" style="display:none;">No entries yet. Add someone to start logging.</div>
+</main>
+
+<!-- Add person modal -->
+<div class="overlay" id="personOverlay">
+  <div class="modal">
+    <h3>New entry</h3>
+    <div class="field">
+      <label>Name</label>
+      <input type="text" id="personName" placeholder="First name or initials">
+    </div>
+    <div class="field">
+      <label>Initial impression <span class="slider-val" id="initialValDisplay">6</span>/10</label>
+      <div class="slider-row">
+        <input type="range" id="initialVal" min="1" max="10" step="1" value="6">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('personOverlay')">Cancel</button>
+      <button class="btn-save" onclick="savePerson()">Add entry</button>
+    </div>
+  </div>
+</div>
+
+<!-- Log interaction modal -->
+<div class="overlay" id="interactionOverlay">
+  <div class="modal">
+    <h3>Log an interaction</h3>
+    <input type="hidden" id="interactionPersonId">
+
+    <div class="field">
+      <label>Communication <span class="slider-val" id="commDisplay">6</span>/10</label>
+      <input type="range" id="commVal" min="1" max="10" step="1" value="6">
+    </div>
+    <div class="field">
+      <label>Chemistry <span class="slider-val" id="chemDisplay">6</span>/10</label>
+      <input type="range" id="chemVal" min="1" max="10" step="1" value="6">
+    </div>
+    <div class="field">
+      <label>Effort <span class="slider-val" id="effortDisplay">6</span>/10</label>
+      <input type="range" id="effortVal" min="1" max="10" step="1" value="6">
+    </div>
+    <div class="field">
+      <label>Reliability <span class="slider-val" id="relDisplay">6</span>/10</label>
+      <input type="range" id="relVal" min="1" max="10" step="1" value="6">
+    </div>
+    <div class="field">
+      <label>How significant was this? <span class="slider-val" id="impDisplay">1.0</span>×</label>
+      <input type="range" id="impVal" min="0.5" max="3" step="0.1" value="1">
+    </div>
+    <div class="field">
+      <label>Note (optional)</label>
+      <textarea id="interactionNote" placeholder="What happened"></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('interactionOverlay')">Cancel</button>
+      <button class="btn-save" onclick="saveInteraction()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- rating engine ---------- */
+
+const STORE_KEY = 'ledger_people_v1';
+
+function loadPeople(){
+  try{ return JSON.parse(localStorage.getItem(STORE_KEY)) || []; }
+  catch(e){ return []; }
+}
+function savePeople(people){
+  localStorage.setItem(STORE_KEY, JSON.stringify(people));
+}
+
+function daysAgo(dateStr){
+  return Math.max(0, (Date.now() - new Date(dateStr).getTime()) / 86400000);
+}
+
+// population mean of everyone's initial impressions — used as a Bayesian
+// anchor so a brand-new entry doesn't just float on one number you typed in
+function populationMean(people){
+  if(!people.length) return 5.5;
+  const sum = people.reduce((s,p)=>s+p.initial,0);
+  return sum/people.length;
+}
+
+// recency decay: an interaction's influence fades with time but never
+// vanishes completely (floor keeps very old data from being erased outright)
+function recencyFactor(days){
+  const halfLife = 45; // days
+  const decay = Math.pow(0.5, days/halfLife);
+  return Math.max(0.15, decay);
+}
+
+// per-interaction overall quality = average of its four category scores
+function interactionQuality(i){
+  return (i.comm + i.chem + i.effort + i.rel) / 4;
+}
+
+function computeRating(person, allPeople){
+  const popMean = populationMean(allPeople);
+  const ownWeight = 2;   // how much their stated initial impression counts
+  const popWeight = 1;   // how much the overall population anchors it
+  const priorRating = (person.initial*ownWeight + popMean*popWeight) / (ownWeight+popWeight);
+  const priorWeight = ownWeight + popWeight;
+
+  let totalWeight = priorWeight;
+  let weightedSum = priorRating * priorWeight;
+
+  const sorted = [...person.interactions].sort((a,b)=> new Date(a.date)-new Date(b.date));
+
+  sorted.forEach(i=>{
+    const q = interactionQuality(i);
+    const rec = recencyFactor(daysAgo(i.date));
+    let effWeight = i.importance * rec;
+    // diminishing returns: no single interaction may exceed ~35% of the
+    // weight accumulated so far, so one great or terrible night can't swing everything
+    const cap = totalWeight * 0.35 + 0.1;
+    effWeight = Math.min(effWeight, cap);
+    weightedSum += q * effWeight;
+    totalWeight += effWeight;
+  });
+
+  let rating = weightedSum / totalWeight;
+
+  // long-gap drift: if it's been quiet a while, ease back toward the
+  // original impression rather than staying frozen at a past peak
+  const last = sorted[sorted.length-1];
+  if(last){
+    const gap = daysAgo(last.date);
+    if(gap > 60){
+      const drift = Math.min(0.4, (gap-60)/300);
+      rating = rating*(1-drift) + person.initial*drift;
+    }
+  }
+
+  return Math.max(1, Math.min(10, rating));
+}
+
+function computeConsistency(person){
+  const n = person.interactions.length;
+  if(n < 2) return null;
+  const qualities = person.interactions.map(interactionQuality);
+  const mean = qualities.reduce((a,b)=>a+b,0)/n;
+  const variance = qualities.reduce((a,b)=>a+(b-mean)**2,0)/n;
+  const sd = Math.sqrt(variance);
+  // convert to a 0-100 "steadiness" score: low spread = high steadiness
+  return Math.max(0, Math.round(100 - sd*22));
+}
+
+function computeTrend(person){
+  const n = person.interactions.length;
+  if(n < 3) return 'flat';
+  const sorted = [...person.interactions].sort((a,b)=> new Date(a.date)-new Date(b.date));
+  const qualities = sorted.map(interactionQuality);
+  const overallAvg = qualities.reduce((a,b)=>a+b,0)/n;
+  const recentN = qualities.slice(-3);
+  const recentAvg = recentN.reduce((a,b)=>a+b,0)/recentN.length;
+  const diff = recentAvg - overallAvg;
+  if(diff > 0.6) return 'up';
+  if(diff < -0.6) return 'down';
+  return 'flat';
+}
+
+function categoryAverages(person){
+  const cats = ['comm','chem','effort','rel'];
+  const labels = {comm:'Communication',chem:'Chemistry',effort:'Effort',rel:'Reliability'};
+  const out = {};
+  cats.forEach(c=>{
+    if(!person.interactions.length){ out[c]=null; return; }
+    let wsum=0, wtot=0;
+    person.interactions.forEach(i=>{
+      const rec = recencyFactor(daysAgo(i.date));
+      const w = i.importance*rec;
+      wsum += i[c]*w;
+      wtot += w;
+    });
+    out[c] = wtot ? wsum/wtot : null;
+  });
+  return {values: out, labels};
+}
+
+/* ---------- rendering ---------- */
+
+let people = loadPeople();
+let openId = null;
+
+function fmt(n){ return n.toFixed(1); }
+
+function render(){
+  const container = document.getElementById('entries');
+  const sortMode = document.getElementById('sortSelect').value;
+  const withScores = people.map(p=>({
+    p, rating: computeRating(p, people)
+  }));
+
+  if(sortMode==='rating') withScores.sort((a,b)=>b.rating-a.rating);
+  else if(sortMode==='name') withScores.sort((a,b)=>a.p.name.localeCompare(b.p.name));
+  else if(sortMode==='recent') withScores.sort((a,b)=>{
+    const la = a.p.interactions.length ? Math.max(...a.p.interactions.map(i=>new Date(i.date).getTime())) : 0;
+    const lb = b.p.interactions.length ? Math.max(...b.p.interactions.map(i=>new Date(i.date).getTime())) : 0;
+    return lb-la;
+  });
+
+  document.getElementById('emptyState').style.display = people.length ? 'none' : 'block';
+  container.innerHTML = '';
+
+  withScores.forEach(({p,rating})=>{
+    const trend = computeTrend(p);
+    const consistency = computeConsistency(p);
+    const cats = categoryAverages(p);
+
+    const el = document.createElement('div');
+    el.className = 'entry' + (openId===p.id ? ' open':'');
+
+    const trendArrow = trend==='up' ? '↗' : trend==='down' ? '↘' : '→';
+
+    let catBarsHtml = '';
+    Object.keys(cats.values).forEach(k=>{
+      const v = cats.values[k];
+      const pct = v ? (v/10*100) : 0;
+      catBarsHtml += `
+        <div class="cat-bar-row">
+          <div class="cat-label">${cats.labels[k]}</div>
+          <div class="cat-track"><div class="cat-fill" style="width:${pct}%"></div></div>
+          <div class="cat-val">${v ? fmt(v) : '—'}</div>
+        </div>`;
+    });
+
+    const sortedInteractions = [...p.interactions].sort((a,b)=> new Date(b.date)-new Date(a.date));
+    let historyHtml = sortedInteractions.map(i=>{
+      const q = interactionQuality(i);
+      return `<div class="interaction">
+        <span class="date">${new Date(i.date).toLocaleDateString()}</span>
+        <span class="note">${i.note ? i.note : '—'}</span>
+        <span class="q">${fmt(q)}</span>
+      </div>`;
+    }).join('');
+    if(!historyHtml) historyHtml = '<div class="interaction"><span class="note">No interactions logged yet.</span></div>';
+
+    el.innerHTML = `
+      <div class="entry-head" onclick="toggleOpen('${p.id}')">
+        <div class="entry-name">${p.name}</div>
+        <div class="entry-meta">
+          <span class="trend ${trend}">${trendArrow}</span>
+          ${consistency!==null ? `<span>${consistency}% steady</span>` : ''}
+          <span>${p.interactions.length} logged</span>
+        </div>
+        <div class="entry-score">${fmt(rating)}</div>
+      </div>
+      <div class="entry-body">
+        <div class="stat-row">
+          <div class="stat"><b>Initial impression:</b> ${fmt(p.initial)}</div>
+          <div class="stat"><b>Interactions:</b> ${p.interactions.length}</div>
+          ${consistency!==null ? `<div class="stat"><b>Steadiness:</b> ${consistency}%</div>` : ''}
+        </div>
+        <div class="cat-bars">${catBarsHtml}</div>
+        <div class="history">
+          <h4>History</h4>
+          ${historyHtml}
+        </div>
+        <button class="log-btn" onclick="openInteractionModal('${p.id}')">+ Log interaction</button>
+        <button class="delete-btn" onclick="deletePerson('${p.id}')">Delete entry</button>
+      </div>
+    `;
+    container.appendChild(el);
+  });
+}
+
+function toggleOpen(id){
+  openId = (openId === id) ? null : id;
+  render();
+}
+
+function deletePerson(id){
+  if(!confirm('Delete this entry and all its history?')) return;
+  people = people.filter(p=>p.id!==id);
+  savePeople(people);
+  render();
+}
+
+/* ---------- modals ---------- */
+
+function openModal(id){ document.getElementById(id).classList.add('show'); }
+function closeModal(id){ document.getElementById(id).classList.remove('show'); }
+
+document.getElementById('addPersonBtn').onclick = ()=>{
+  document.getElementById('personName').value='';
+  document.getElementById('initialVal').value=6;
+  document.getElementById('initialValDisplay').textContent='6';
+  openModal('personOverlay');
+};
+
+document.getElementById('initialVal').addEventListener('input', e=>{
+  document.getElementById('initialValDisplay').textContent = e.target.value;
+});
+
+function savePerson(){
+  const name = document.getElementById('personName').value.trim();
+  if(!name){ alert('Give this entry a name.'); return; }
+  const initial = parseFloat(document.getElementById('initialVal').value);
+  people.push({
+    id: 'p'+Date.now(),
+    name,
+    initial,
+    interactions: []
+  });
+  savePeople(people);
+  closeModal('personOverlay');
+  render();
+}
+
+function openInteractionModal(personId){
+  document.getElementById('interactionPersonId').value = personId;
+  ['comm','chem','effort','rel'].forEach(k=>{
+    document.getElementById(k+'Val').value = 6;
+    document.getElementById(k+'Display').textContent = '6';
+  });
+  document.getElementById('impVal').value = 1;
+  document.getElementById('impDisplay').textContent = '1.0';
+  document.getElementById('interactionNote').value = '';
+  openModal('interactionOverlay');
+}
+
+['comm','chem','effort','rel'].forEach(k=>{
+  document.getElementById(k+'Val').addEventListener('input', e=>{
+    document.getElementById(k+'Display').textContent = e.target.value;
+  });
+});
+document.getElementById('impVal').addEventListener('input', e=>{
+  document.getElementById('impDisplay').textContent = parseFloat(e.target.value).toFixed(1);
+});
+
+function saveInteraction(){
+  const personId = document.getElementById('interactionPersonId').value;
+  const person = people.find(p=>p.id===personId);
+  if(!person) return;
+
+  person.interactions.push({
+    date: new Date().toISOString(),
+    comm: parseFloat(document.getElementById('commVal').value),
+    chem: parseFloat(document.getElementById('chemVal').value),
+    effort: parseFloat(document.getElementById('effortVal').value),
+    rel: parseFloat(document.getElementById('relVal').value),
+    importance: parseFloat(document.getElementById('impVal').value),
+    note: document.getElementById('interactionNote').value.trim()
+  });
+
+  savePeople(people);
+  closeModal('interactionOverlay');
+  openId = personId;
+  render();
+}
+
+document.getElementById('sortSelect').addEventListener('change', render);
+
+render();
+</script>
+</body>
+</html>
